@@ -1,5 +1,5 @@
-#include_directory()
+add_subdirectory(calculator)
 
-add_executable(a.out main.cpp)
-#target_link_libraries(a.out PUBLIC )
-target_include_directories(a.out PUBLIC "${CMAKE_BINARY_DIR}/config/include/")
+add_executable(calc main.cpp)
+target_link_libraries(calc PUBLIC calculator)
+target_include_directories(calc PUBLIC "${CMAKE_BINARY_DIR}/config/include/")
