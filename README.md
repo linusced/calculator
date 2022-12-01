@@ -4,4 +4,4 @@ A simple c++ console calculator I wrote in a few days. There's nothing special a
 # usage
 example: calc "sin(π / 2) + 5.3^3 - (5 + (0.3 - 2))"
 
-Binary files can be found in releases.
+You should be able to clone/download this repo and build this program...
