@@ -1,4 +1,3 @@
-#include "config.hpp"
 #include "calculator.hpp"
 
 int main(int argc, char const *argv[])
