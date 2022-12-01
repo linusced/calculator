@@ -1,37 +1,13 @@
 #include "calculator.hpp"
 
-const std::unordered_map<std::string_view, Calculator::num> Calculator::constants{
-    {"pi", std::numbers::pi}, {"PI", std::numbers::pi}, {"π", std::numbers::pi}};
-
-const std::unordered_map<std::string_view, std::function<Calculator::num(Calculator::num)>> Calculator::singleParamFunctions{
-    {"sqrt", [](Calculator::num x)
-     { return std::sqrt(x); }},
-    {"sin", [](Calculator::num x)
-     { return std::sin(x); }},
-    {"cos", [](Calculator::num x)
-     { return std::cos(x); }},
-    {"tan", [](Calculator::num x)
-     { return std::tan(x); }},
-    {"asin", [](Calculator::num x)
-     { return std::asin(x); }},
-    {"acos", [](Calculator::num x)
-     { return std::acos(x); }},
-    {"atan", [](Calculator::num x)
-     { return std::atan(x); }}};
-
-Calculator::num Calculator::calculate()
-{
-    return calculateRecursive(operations.back());
-}
-
-Calculator::num Calculator::calculateRecursive(const std::string &str)
+double Calculator::calculateRecursive(const std::string &str, const std::vector<std::string> *operations)
 {
     size_t operatorPos = str.find_first_of(operators);
     if (operatorPos == std::string::npos)
-        return calculateStrToNum(str);
+        return calculateStrToNum(str, operations);
 
-    num first = calculateStrToNum(str.substr(0, operatorPos)),
-        second = calculateStrToNum(str.substr(operatorPos + 1));
+    double first = calculateStrToNum(str.substr(0, operatorPos), operations),
+           second = calculateStrToNum(str.substr(operatorPos + 1), operations);
 
     switch (str[operatorPos])
     {
@@ -49,10 +25,10 @@ Calculator::num Calculator::calculateRecursive(const std::string &str)
     return 0.0; // prevent warning
 }
 
-Calculator::num Calculator::calculateStrToNum(std::string str)
+double Calculator::calculateStrToNum(std::string str, const std::vector<std::string> *operations)
 {
     if (str.front() == '$')
-        return calculateRecursive(operations[std::stoi(str.substr(1))]);
+        return calculateRecursive(operations->at(std::stoi(str.substr(1))), operations);
     else
     {
         auto cFind = constants.find(str);
@@ -61,16 +37,26 @@ Calculator::num Calculator::calculateStrToNum(std::string str)
         else
         {
             size_t parenthesesBegin = str.find_first_of('(');
-            auto spfFind = singleParamFunctions.find(str.substr(0, parenthesesBegin));
-            if (spfFind != singleParamFunctions.end())
-                return spfFind->second(calculateRecursive(str.substr(parenthesesBegin + 1, str.find_first_of(')') - (parenthesesBegin + 1))));
+            if (parenthesesBegin != std::string::npos)
+            {
+                auto spfFind = singleParamFunctions.find(str.substr(0, parenthesesBegin));
+                if (spfFind != singleParamFunctions.end())
+                    return spfFind->second(calculateRecursive(str.substr(parenthesesBegin + 1, str.find_first_of(')') - (parenthesesBegin + 1)), operations));
+                else
+                    throw "";
+            }
             else
             {
                 size_t comma = str.find(',');
                 if (comma != std::string::npos)
                     str[comma] = '.';
 
-                return std::stold(str);
+                size_t idx;
+                double out = std::stod(str, &idx);
+                if (idx != str.size())
+                    throw "";
+
+                return out;
             }
         }
     }

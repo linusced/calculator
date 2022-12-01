@@ -1,60 +1,89 @@
 #include "calculator.hpp"
 
-bool Calculator::parse(const std::string &str)
+void Calculator::parseRecursive(std::string *str, const size_t begin, const size_t end, std::vector<std::string> *operations)
 {
-    parseStr = str;
-    parseError.clear();
-    operations.clear();
-
-    parseStr.erase(std::remove_if(parseStr.begin(), parseStr.end(), isspace), parseStr.end());
-
-    parseRecursive(0, parseStr.size());
-
-    bool b{false};
-    std::cout << str << '\n';
-    std::cout << '[';
-    for (auto &o : operations)
+    size_t pos = str->find_first_of('(', begin);
+    while (pos < end)
     {
-        if (b)
-            std::cout << "    ";
+        size_t parenthesesEnd, parenthesesCount{1};
+        for (size_t i = pos + 1; i < end; i++)
+        {
+            if (str->at(i) == '(')
+                parenthesesCount++;
+            else if (str->at(i) == ')')
+            {
+                parenthesesCount--;
+                if (parenthesesCount == 0)
+                {
+                    parenthesesEnd = i;
+                    break;
+                }
+            }
+        }
 
-        std::cout << o;
-        b = true;
+        size_t operatorPos = str->find_first_of(operators, begin), newOperatorPos = operatorPos;
+        while (newOperatorPos < pos)
+        {
+            operatorPos = newOperatorPos;
+            newOperatorPos = str->find_first_of(operators, operatorPos + 1);
+        }
+
+        std::string spfSubstr;
+        if (operatorPos >= pos)
+            spfSubstr = str->substr(begin, pos - begin);
+        else
+            spfSubstr = str->substr(operatorPos + 1, pos - operatorPos - 1);
+
+        bool isFunctionCall{false};
+        auto spfFind = singleParamFunctions.find(spfSubstr);
+        if (spfFind != singleParamFunctions.end())
+            isFunctionCall = true;
+
+        if (!isFunctionCall || str->find_first_of(operators, pos + 1) < parenthesesEnd)
+        {
+            parseRecursive(str, pos + 1, parenthesesEnd, operations);
+
+            if (isFunctionCall)
+            {
+                pos++;
+                parenthesesEnd--;
+            }
+
+            std::string replace{'$' + std::to_string(operations->size() - 1)};
+            replace.resize((parenthesesEnd + 1) - pos, ' ');
+            str->replace(pos, (parenthesesEnd + 1) - pos, replace);
+        }
+
+        pos = str->find_first_of('(', parenthesesEnd + 1);
     }
-    std::cout << "]\n";
 
-    return !operations.empty();
-}
-
-void Calculator::parseRecursive(size_t begin, size_t end)
-{
     std::vector<size_t> operatorPosArr;
 
-    size_t pos = parseStr.find_first_of(highPriorityOperators, begin);
+    pos = str->find_first_of(highPriorityOperators, begin);
     while (pos < end)
     {
         operatorPosArr.push_back(pos);
-        pos = parseStr.find_first_of(highPriorityOperators, pos + 1);
+        pos = str->find_first_of(highPriorityOperators, pos + 1);
     }
 
-    pos = parseStr.find_first_of(mediumPriorityOperators, begin);
+    pos = str->find_first_of(mediumPriorityOperators, begin);
     while (pos < end)
     {
         operatorPosArr.push_back(pos);
-        pos = parseStr.find_first_of(mediumPriorityOperators, pos + 1);
+        pos = str->find_first_of(mediumPriorityOperators, pos + 1);
     }
 
-    pos = parseStr.find_first_of(lowPriorityOperators, begin);
+    pos = str->find_first_of(lowPriorityOperators, begin);
     while (pos < end)
     {
         operatorPosArr.push_back(pos);
-        pos = parseStr.find_first_of(lowPriorityOperators, pos + 1);
+        pos = str->find_first_of(lowPriorityOperators, pos + 1);
     }
 
-    if (operatorPosArr.size() == 1)
+    if (operatorPosArr.size() <= 1)
     {
-        operations.push_back(parseStr.substr(begin, end - begin));
-        operations.back().erase(std::remove_if(operations.back().begin(), operations.back().end(), isspace), operations.back().end());
+        operations->push_back(str->substr(begin, end - begin));
+        operations->back().erase(std::remove_if(operations->back().begin(), operations->back().end(), isspace), operations->back().end());
     }
     else
     {
@@ -70,11 +99,11 @@ void Calculator::parseRecursive(size_t begin, size_t end)
                     opEnd = operatorPosArr[j];
             }
 
-            parseRecursive(opBegin, opEnd);
+            parseRecursive(str, opBegin, opEnd, operations);
 
-            std::string replace{'$' + std::to_string(operations.size() - 1)};
+            std::string replace{'$' + std::to_string(operations->size() - 1)};
             replace.resize(opEnd - opBegin, ' ');
-            parseStr.replace(opBegin, opEnd - opBegin, replace);
+            str->replace(opBegin, opEnd - opBegin, replace);
 
             operatorPosArr.erase(operatorPosArr.begin());
         }
