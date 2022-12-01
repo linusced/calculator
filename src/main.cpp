@@ -1,4 +1,5 @@
 #include "calculator.hpp"
+#include <iomanip>
 
 int main(int argc, char const *argv[])
 {
@@ -16,6 +17,6 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    std::cout << c.value << '\n';
+    std::cout << std::setprecision(15) << c.value << '\n';
     return 0;
 }
